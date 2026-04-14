@@ -1,4 +1,4 @@
-package OptimalSortHeuristic;
+package Kreslavskiy.SortHeuristic;
 
 import org.junit.jupiter.api.Test;
 

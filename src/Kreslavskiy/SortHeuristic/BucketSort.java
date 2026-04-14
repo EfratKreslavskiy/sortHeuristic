@@ -1,4 +1,4 @@
-package OptimalSortHeuristic;
+package Kreslavskiy.SortHeuristic;
 
 public class BucketSort
 {
