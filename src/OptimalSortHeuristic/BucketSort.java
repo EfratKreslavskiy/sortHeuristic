@@ -1,3 +1,5 @@
+package OptimalSortHeuristic;
+
 public class BucketSort
 {
     public static void bucketSort(Integer[] arr)
@@ -11,8 +13,7 @@ public class BucketSort
             if (arr[i] > max)
             {
                 max = arr[i];
-            }
-            else if (arr[i] < min)
+            } else if (arr[i] < min)
             {
                 min = arr[i];
             }
