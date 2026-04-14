@@ -1,4 +1,4 @@
-package kreslavskiy.sort;
+package kreslavsky.sort;
 
 public class BucketSort
 {

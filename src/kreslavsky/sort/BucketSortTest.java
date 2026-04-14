@@ -1,4 +1,4 @@
-package kreslavskiy.sort;
+package kreslavsky.sort;
 
 import org.junit.jupiter.api.Test;
 
