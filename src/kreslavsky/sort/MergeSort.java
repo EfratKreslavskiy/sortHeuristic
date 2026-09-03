@@ -1,6 +1,6 @@
-import java.util.Arrays;
+package kreslavsky.sort;
 
-public class SortingMethods
+public class MergeSort
 {
     public static <T extends Comparable<T>> void mergeSort(T[] arr, int start, int end) //goes from start until (not including) end
     {
