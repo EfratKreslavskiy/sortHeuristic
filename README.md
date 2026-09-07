@@ -102,8 +102,8 @@ of a particular dataset can affect real-world performance.
 
 ## Advisors
 
-- Dr. Dmitry Kreslavskiy
-- Dr. Andrew Katz
+- [Dr. Dmitry Kreslavskiy](https://www.linkedin.com/in/gt6989b/)
+- [Dr. Andrew Katz](https://www.linkedin.com/in/andrew-katz-24611a8/)
 
 ## Links
 
