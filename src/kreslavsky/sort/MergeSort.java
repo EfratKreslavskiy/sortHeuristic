@@ -1,5 +1,7 @@
 package kreslavsky.sort;
 
+import java.util.Arrays;
+
 public class MergeSort
 {
     public static <T extends Comparable<T>> void mergeSort(T[] arr, int start, int end) //goes from start until (not including) end
@@ -12,11 +14,14 @@ public class MergeSort
         }
         else //recursive case
         {
-            int half = start + size / 2; //computing half incorrectly
+            int half = start + size / 2;
 
             mergeSort(arr, start, half);
             mergeSort(arr, half, end);
-            mergeHalves(arr, start, half, end);
+            if (arr[half - 1].compareTo(arr[half]) > 0)
+            {
+                mergeHalves(arr, start, half, end);
+            }
         }
     }
 
@@ -29,42 +34,31 @@ public class MergeSort
 
     public static <T extends Comparable<T>> void mergeHalves(T[] arr, int l, int r, int end)
     {
-        while (r != end)
+        if (r <= l || r >= end || arr[r - 1].compareTo(arr[r]) <= 0)
         {
-            int comparison = arr[l].compareTo(arr[r]);
-            if (comparison < 0)
-            {
-                ++l;
-            }
-            else if (comparison > 0)
-            {
-                swap(arr, l, r);
-                ++l;
-                if (r != end-1 && arr[r].compareTo(arr[r+1]) > 0)
-                {
-                    ++r;
-                }
-            }
-            else //they're equal
-            {
+            return;
+        }
 
-                if (l + 1 != r) //r and l aren't next to each other
-                {
-                    ++l;
-                    swap(arr, l, r);
-                    ++l;
-                    ++r;
-                } else
-                {
-                    l += 2;
-                    r += 2;
-                }
-            }
+        T[] leftHalf = Arrays.copyOfRange(arr, l, r);
+        int left = 0;
+        int right = r;
+        int write = l;
 
-            if (l == r) //they shouldn't ever point to the same index
+        while (left < leftHalf.length && right < end)
+        {
+            if (leftHalf[left].compareTo(arr[right]) <= 0)
             {
-                ++r;
+                arr[write++] = leftHalf[left++];
             }
+            else
+            {
+                arr[write++] = arr[right++];
+            }
+        }
+
+        while (left < leftHalf.length)
+        {
+            arr[write++] = leftHalf[left++];
         }
     }
 }

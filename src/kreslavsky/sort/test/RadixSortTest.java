@@ -1,12 +1,14 @@
-package kreslavsky.sort;
+package kreslavsky.sort.test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import kreslavsky.sort.RadixSort;
 import org.junit.jupiter.api.Test;
 
-class MergeSortTest
-{
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
+public class RadixSortTest {
+
     @Test
-    void mergeSort_Integers()
+    void radixSort_Integers()
     {
         Integer[] sorted = {1, 2, 3, 4, 5};
         Integer[][] testArrays = {sorted.clone(),
@@ -15,13 +17,13 @@ class MergeSortTest
 
         for (int i = 0; i < testArrays.length; i++)
         {
-            MergeSort.mergeSort(testArrays[i], 0, testArrays[i].length);
+            RadixSort.radixSort(testArrays[i], RadixSort.INTEGER);
             assertArrayEquals(testArrays[i], sorted);
         }
     }
 
     @Test
-    void mergeSort_Strings()
+    void radixSort_Strings()
     {
         String[] sorted = {"aa", "bb", "cc", "dd", "ee"};
         String[][] testArrays = {sorted.clone(),
@@ -30,13 +32,13 @@ class MergeSortTest
 
         for (int i = 0; i < testArrays.length; i++)
         {
-            MergeSort.mergeSort(testArrays[i], 0, testArrays[i].length);
+            RadixSort.radixSort(testArrays[i], RadixSort.STRING);
             assertArrayEquals(testArrays[i], sorted);
         }
     }
 
     @Test
-    void mergeSort_Doubles()
+    void radixSort_Doubles()
     {
         Double[] sorted = {0.1, 0.2, 0.3, 0.4, 0.5};
         Double[][] testArrays = {sorted.clone(),
@@ -45,7 +47,7 @@ class MergeSortTest
 
         for (int i = 0; i < testArrays.length; i++)
         {
-            MergeSort.mergeSort(testArrays[i], 0, testArrays[i].length);
+            RadixSort.radixSort(testArrays[i], RadixSort.DOUBLE);
             assertArrayEquals(testArrays[i], sorted);
         }
     }
