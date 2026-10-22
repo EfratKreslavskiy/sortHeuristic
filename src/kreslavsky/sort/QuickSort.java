@@ -4,35 +4,43 @@ import static kreslavsky.sort.MergeSort.swap;
 
 public class QuickSort {
     public static <T extends Comparable<T>> void quickSort(T[] arr, int start, int end) {
-        if (end - start <= 1)
+        while (end - start > 1)
         {
-            return;
-        }
+            int lt = start;
+            int ix = start;
+            int gt = end - 1;
+            T pivot = arr[start + (end - start) / 2];
 
-        int lt = start;
-        int ix = start;
-        int gt = end - 1;
-        T pivot = arr[start + (end - start) / 2];
-
-        while (ix <= gt)
-        {
-            int comparison = arr[ix].compareTo(pivot);
-            if (comparison < 0)
+            while (ix <= gt)
             {
-                swap(arr, lt++, ix++);
+                int comparison = arr[ix].compareTo(pivot);
+                if (comparison < 0)
+                {
+                    swap(arr, lt++, ix++);
+                }
+                else if (comparison > 0)
+                {
+                    swap(arr, ix, gt--);
+                }
+                else
+                {
+                    ++ix;
+                }
             }
-            else if (comparison > 0)
+
+            int leftEnd = lt;
+            int rightStart = gt + 1;
+            if (leftEnd - start < end - rightStart)
             {
-                swap(arr, ix, gt--);
+                quickSort(arr, start, leftEnd);
+                start = rightStart;
             }
             else
             {
-                ++ix;
+                quickSort(arr, rightStart, end);
+                end = leftEnd;
             }
         }
-
-        quickSort(arr, start, lt);
-        quickSort(arr, gt + 1, end);
     }
 
     public static <T extends Comparable<T>> int partition(T[] arr, int start, int end)

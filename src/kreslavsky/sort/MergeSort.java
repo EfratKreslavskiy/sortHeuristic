@@ -18,7 +18,10 @@ public class MergeSort
 
             mergeSort(arr, start, half);
             mergeSort(arr, half, end);
-            mergeHalves(arr, start, half, end);
+            if (arr[half - 1].compareTo(arr[half]) > 0)
+            {
+                mergeHalves(arr, start, half, end);
+            }
         }
     }
 
@@ -31,6 +34,11 @@ public class MergeSort
 
     public static <T extends Comparable<T>> void mergeHalves(T[] arr, int l, int r, int end)
     {
+        if (r <= l || r >= end || arr[r - 1].compareTo(arr[r]) <= 0)
+        {
+            return;
+        }
+
         T[] leftHalf = Arrays.copyOfRange(arr, l, r);
         int left = 0;
         int right = r;
