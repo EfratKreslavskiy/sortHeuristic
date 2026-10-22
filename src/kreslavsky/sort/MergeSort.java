@@ -1,5 +1,7 @@
 package kreslavsky.sort;
 
+import java.util.Arrays;
+
 public class MergeSort
 {
     public static <T extends Comparable<T>> void mergeSort(T[] arr, int start, int end) //goes from start until (not including) end
@@ -29,42 +31,26 @@ public class MergeSort
 
     public static <T extends Comparable<T>> void mergeHalves(T[] arr, int l, int r, int end)
     {
-        while (r != end)
+        T[] leftHalf = Arrays.copyOfRange(arr, l, r);
+        int left = 0;
+        int right = r;
+        int write = l;
+
+        while (left < leftHalf.length && right < end)
         {
-            int comparison = arr[l].compareTo(arr[r]);
-            if (comparison < 0)
+            if (leftHalf[left].compareTo(arr[right]) <= 0)
             {
-                ++l;
+                arr[write++] = leftHalf[left++];
             }
-            else if (comparison > 0)
+            else
             {
-                swap(arr, l, r);
-                ++l;
-                if (r != end-1 && arr[r].compareTo(arr[r+1]) > 0)
-                {
-                    ++r;
-                }
+                arr[write++] = arr[right++];
             }
-            else //they're equal
-            {
+        }
 
-                if (l + 1 != r) //r and l aren't next to each other
-                {
-                    ++l;
-                    swap(arr, l, r);
-                    ++l;
-                    ++r;
-                } else
-                {
-                    l += 2;
-                    r += 2;
-                }
-            }
-
-            if (l == r) //they shouldn't ever point to the same index
-            {
-                ++r;
-            }
+        while (left < leftHalf.length)
+        {
+            arr[write++] = leftHalf[left++];
         }
     }
 }

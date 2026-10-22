@@ -1,5 +1,6 @@
-package kreslavsky.sort;
+package kreslavsky.sort.test;
 
+import kreslavsky.sort.BucketSort;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
