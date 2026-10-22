@@ -4,21 +4,35 @@ import static kreslavsky.sort.MergeSort.swap;
 
 public class QuickSort {
     public static <T extends Comparable<T>> void quickSort(T[] arr, int start, int end) {
-        int size = end - start;
-        if (size <= 2) //base case
+        if (end - start <= 1)
         {
-            if (size == 2 && arr[start].compareTo(arr[start + 1]) > 0) {
-                swap(arr, start, start + 1);
+            return;
+        }
+
+        int lt = start;
+        int ix = start;
+        int gt = end - 1;
+        T pivot = arr[start + (end - start) / 2];
+
+        while (ix <= gt)
+        {
+            int comparison = arr[ix].compareTo(pivot);
+            if (comparison < 0)
+            {
+                swap(arr, lt++, ix++);
+            }
+            else if (comparison > 0)
+            {
+                swap(arr, ix, gt--);
+            }
+            else
+            {
+                ++ix;
             }
         }
-        else //recursive case
-        {
-            int pivotIx = partition(arr, start, end); //pivot ends up in its final sorted spot
 
-            quickSort(arr, start, pivotIx);
-            quickSort(arr, pivotIx + 1, end); //skip the pivot, it's already in place
-        }
-
+        quickSort(arr, start, lt);
+        quickSort(arr, gt + 1, end);
     }
 
     public static <T extends Comparable<T>> int partition(T[] arr, int start, int end)

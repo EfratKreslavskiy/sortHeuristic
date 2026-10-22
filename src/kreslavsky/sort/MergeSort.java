@@ -14,7 +14,7 @@ public class MergeSort
         }
         else //recursive case
         {
-            int half = start + size / 2; //computing half incorrectly
+            int half = start + size / 2;
 
             mergeSort(arr, start, half);
             mergeSort(arr, half, end);
