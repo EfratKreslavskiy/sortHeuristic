@@ -23,9 +23,11 @@ public class RadixSort
         for (T item : arr)
             maxLength = Math.max(maxLength, key.length(item));
 
+        T[] output = arr.clone();
+        int[] count = new int[key.radix() + 1];
         for (int pos = maxLength - 1; pos >= 0; --pos) //least significant digit first
         {
-            countingSortByDigit(arr, key, pos);
+            countingSortByDigit(arr, key, pos, output, count);
         }
     }
 
@@ -35,10 +37,14 @@ public class RadixSort
         return (pos < key.length(item)) ? key.digitAt(item, pos) + 1 : 0;
     }
 
-    private static <T> void countingSortByDigit(T[] arr, Key<T> key, int pos)
+    private static <T> void countingSortByDigit(
+            T[] arr,
+            Key<T> key,
+            int pos,
+            T[] output,
+            int[] count)
     {
-        T[] output = arr.clone();
-        int[] count = new int[key.radix() + 1];
+        java.util.Arrays.fill(count, 0);
 
         for (T item : arr)
             ++count[digitOf(item, key, pos)];

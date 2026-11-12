@@ -1,5 +1,7 @@
 package kreslavsky.sort;
 
+import java.util.Arrays;
+
 public class TimSort
 {
     private static final int MIN_MERGE = 32;
@@ -8,6 +10,7 @@ public class TimSort
     {
         int size = arr.length;
         int minRun = minRunLength(size);
+        T[] buffer = arr.clone();
 
         // sort small chunks with insertion sort
         for (int i = 0; i < size; i += minRun)
@@ -25,9 +28,39 @@ public class TimSort
 
                 if (arr[mid].compareTo(arr[mid + 1]) > 0)
                 {
-                    MergeSort.mergeHalves(arr, left, mid + 1, right + 1);
+                    mergeHalves(arr, left, mid + 1, right + 1, buffer);
                 }
             }
+        }
+    }
+
+    private static <T extends Comparable<T>> void mergeHalves(
+            T[] arr,
+            int left,
+            int middle,
+            int end,
+            T[] buffer)
+    {
+        System.arraycopy(arr, left, buffer, left, middle - left);
+        int first = left;
+        int second = middle;
+        int write = left;
+
+        while (first < middle && second < end)
+        {
+            if (buffer[first].compareTo(arr[second]) <= 0)
+            {
+                arr[write++] = buffer[first++];
+            }
+            else
+            {
+                arr[write++] = arr[second++];
+            }
+        }
+
+        while (first < middle)
+        {
+            arr[write++] = buffer[first++];
         }
     }
 
