@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 public class BucketSort
 {
+    private static final long MAX_BUCKET_RANGE = 10_000_000L;
+
     public static void bucketSort(Integer[] arr)
     {
         int arrSize = arr.length;
@@ -27,7 +29,9 @@ public class BucketSort
         }
 
         long range = (long) max - min + 1;
-        if (range > Integer.MAX_VALUE)
+        if (range > Integer.MAX_VALUE
+                || range > MAX_BUCKET_RANGE
+                || range > Math.max(1024L, (long) arrSize * 64L))
         {
             Arrays.sort(arr);
             return;

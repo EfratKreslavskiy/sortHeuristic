@@ -1,10 +1,17 @@
 package kreslavsky.sort;
 
-import java.util.Arrays;
-
 public class MergeSort
 {
     public static <T extends Comparable<T>> void mergeSort(T[] arr, int start, int end) //goes from start until (not including) end
+    {
+        mergeSort(arr, start, end, arr.clone());
+    }
+
+    private static <T extends Comparable<T>> void mergeSort(
+            T[] arr,
+            int start,
+            int end,
+            T[] buffer)
     {
         int size = end - start;
         if (size <= 2) //base case
@@ -16,11 +23,11 @@ public class MergeSort
         {
             int half = start + size / 2;
 
-            mergeSort(arr, start, half);
-            mergeSort(arr, half, end);
+            mergeSort(arr, start, half, buffer);
+            mergeSort(arr, half, end, buffer);
             if (arr[half - 1].compareTo(arr[half]) > 0)
             {
-                mergeHalves(arr, start, half, end);
+                mergeHalves(arr, start, half, end, buffer);
             }
         }
     }
@@ -39,16 +46,26 @@ public class MergeSort
             return;
         }
 
-        T[] leftHalf = Arrays.copyOfRange(arr, l, r);
-        int left = 0;
+        mergeHalves(arr, l, r, end, arr.clone());
+    }
+
+    private static <T extends Comparable<T>> void mergeHalves(
+            T[] arr,
+            int l,
+            int r,
+            int end,
+            T[] buffer)
+    {
+        System.arraycopy(arr, l, buffer, l, r - l);
+        int left = l;
         int right = r;
         int write = l;
 
-        while (left < leftHalf.length && right < end)
+        while (left < r && right < end)
         {
-            if (leftHalf[left].compareTo(arr[right]) <= 0)
+            if (buffer[left].compareTo(arr[right]) <= 0)
             {
-                arr[write++] = leftHalf[left++];
+                arr[write++] = buffer[left++];
             }
             else
             {
@@ -56,9 +73,9 @@ public class MergeSort
             }
         }
 
-        while (left < leftHalf.length)
+        while (left < r)
         {
-            arr[write++] = leftHalf[left++];
+            arr[write++] = buffer[left++];
         }
     }
 }
