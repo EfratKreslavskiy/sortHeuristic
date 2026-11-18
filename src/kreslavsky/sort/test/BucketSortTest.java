@@ -20,4 +20,12 @@ class BucketSortTest
             assertArrayEquals(testArrays[i], sorted);
         }
     }
+
+    @Test
+    void bucketSort_PrimitiveArray()
+    {
+        int[] ints = {5, -1, 3, 3, 0};
+        BucketSort.bucketSort(ints);
+        assertArrayEquals(new int[] {-1, 0, 3, 3, 5}, ints);
+    }
 }

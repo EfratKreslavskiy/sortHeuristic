@@ -23,9 +23,87 @@ public class RadixSort
         for (T item : arr)
             maxLength = Math.max(maxLength, key.length(item));
 
+        @SuppressWarnings("unchecked")
+        T[] buffer = arr.clone();
+        int[] count = new int[key.radix() + 1];
+        T[] source = arr;
+        T[] destination = buffer;
+
         for (int pos = maxLength - 1; pos >= 0; --pos) //least significant digit first
         {
-            countingSortByDigit(arr, key, pos);
+            countingSortByDigit(source, destination, key, pos, count);
+            T[] swap = source;
+            source = destination;
+            destination = swap;
+        }
+
+        if (source != arr)
+            System.arraycopy(source, 0, arr, 0, arr.length);
+    }
+
+    public static void radixSort(int[] arr)
+    {
+        if (arr.length <= 1)
+            return;
+        int[] buffer = new int[arr.length];
+        int[] count = new int[257];
+        int[] source = arr;
+        int[] destination = buffer;
+        for (int byteIndex = 0; byteIndex < 4; ++byteIndex)
+        {
+            java.util.Arrays.fill(count, 0);
+            int shift = byteIndex * 8;
+            for (int value : source)
+                ++count[((value ^ Integer.MIN_VALUE) >>> shift) & 0xFF];
+            for (int i = 1; i < count.length; ++i)
+                count[i] += count[i - 1];
+            for (int i = source.length - 1; i >= 0; --i)
+            {
+                int digit = ((source[i] ^ Integer.MIN_VALUE) >>> shift) & 0xFF;
+                destination[--count[digit]] = source[i];
+            }
+            int[] swap = source;
+            source = destination;
+            destination = swap;
+        }
+        if (source != arr)
+            System.arraycopy(source, 0, arr, 0, arr.length);
+    }
+
+    public static void radixSort(double[] arr)
+    {
+        if (arr.length <= 1)
+            return;
+        long[] source = new long[arr.length];
+        long[] destination = new long[arr.length];
+        int[] count = new int[257];
+        for (int i = 0; i < arr.length; ++i)
+        {
+            long bits = Double.doubleToLongBits(arr[i]);
+            source[i] = (bits < 0) ? ~bits : bits ^ Long.MIN_VALUE;
+        }
+        for (int byteIndex = 0; byteIndex < 8; ++byteIndex)
+        {
+            java.util.Arrays.fill(count, 0);
+            int shift = byteIndex * 8;
+            for (long value : source)
+                ++count[(int)((value >>> shift) & 0xFF)];
+            for (int i = 1; i < count.length; ++i)
+                count[i] += count[i - 1];
+            for (int i = source.length - 1; i >= 0; --i)
+            {
+                int digit = (int)((source[i] >>> shift) & 0xFF);
+                destination[--count[digit]] = source[i];
+            }
+            long[] swap = source;
+            source = destination;
+            destination = swap;
+        }
+        for (int i = 0; i < arr.length; ++i)
+        {
+            long fixed = source[i];
+            arr[i] = Double.longBitsToDouble((fixed & Long.MIN_VALUE) != 0
+                    ? fixed ^ Long.MIN_VALUE : ~fixed);
         }
     }
 
@@ -35,10 +113,9 @@ public class RadixSort
         return (pos < key.length(item)) ? key.digitAt(item, pos) + 1 : 0;
     }
 
-    private static <T> void countingSortByDigit(T[] arr, Key<T> key, int pos)
+    private static <T> void countingSortByDigit(T[] arr, T[] output, Key<T> key, int pos, int[] count)
     {
-        T[] output = arr.clone();
-        int[] count = new int[key.radix() + 1];
+        java.util.Arrays.fill(count, 0);
 
         for (T item : arr)
             ++count[digitOf(item, key, pos)];
@@ -52,8 +129,6 @@ public class RadixSort
             --count[digit];
             output[count[digit]] = arr[i];
         }
-
-        System.arraycopy(output, 0, arr, 0, arr.length);
     }
 
     public static <T> Key<T> byInt(ToIntFunction<T> getter)

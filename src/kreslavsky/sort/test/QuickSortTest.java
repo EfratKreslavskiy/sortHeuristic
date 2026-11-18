@@ -51,4 +51,16 @@ public class QuickSortTest {
             assertArrayEquals(testArrays[i], sorted);
         }
     }
+
+    @Test
+    void quickSort_PrimitiveArrays()
+    {
+        int[] ints = {5, -1, 3, 3, 0};
+        QuickSort.quickSort(ints);
+        assertArrayEquals(new int[] {-1, 0, 3, 3, 5}, ints);
+
+        double[] doubles = {0.5, -1.0, 0.0, 0.5, -0.5};
+        QuickSort.quickSort(doubles);
+        assertArrayEquals(new double[] {-1.0, -0.5, 0.0, 0.5, 0.5}, doubles);
+    }
 }

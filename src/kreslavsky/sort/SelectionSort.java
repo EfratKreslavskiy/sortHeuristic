@@ -6,7 +6,7 @@ public class SelectionSort
 {
     public static <T extends Comparable<T>> void selectionSort(T[] arr)
     {
-        int size = arr.length;;
+        int size = arr.length;
         for (int i = 0; i < size - 1; ++i)
         {
             int minIx = i;
