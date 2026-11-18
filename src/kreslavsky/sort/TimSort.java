@@ -6,404 +6,295 @@ public class TimSort
 
     public static <T extends Comparable<T>> void timSort(T[] arr)
     {
-        int size = arr.length;
-        if (size < 2)
-        {
+        if (arr.length < 2)
             return;
-        }
+        int[] runStarts = new int[arr.length + 1];
+        int runCount = 0;
+        int minRun = minRunLength(arr.length);
+        @SuppressWarnings("unchecked")
+        T[] auxiliary = (T[]) java.lang.reflect.Array.newInstance(
+                arr.getClass().getComponentType(), arr.length);
 
-        TimSorter<T> sorter = new TimSorter<>(arr);
-        sorter.sort();
+        int start = 0;
+        while (start < arr.length)
+        {
+            runStarts[runCount++] = start;
+            int end = findNaturalRunEnd(arr, start);
+            boolean descending = end > start && arr[start].compareTo(arr[start + 1]) > 0;
+            if (descending)
+                reverseRange(arr, start, end);
+            if (end - start + 1 < minRun)
+                end = Math.min(start + minRun - 1, arr.length - 1);
+            if (end > start)
+                InsertionSort.insertionSort(arr, start, end);
+            start = end + 1;
+        }
+        runStarts[runCount] = arr.length;
+
+        while (runCount > 1)
+        {
+            int nextRunCount = 0;
+            for (int i = 0; i < runCount - 1; i += 2)
+            {
+                int left = runStarts[i];
+                int mid = runStarts[i + 1];
+                int right = i + 2 < runCount ? runStarts[i + 2] : arr.length;
+                MergeSort.mergeHalves(arr, auxiliary, left, mid, right);
+                runStarts[nextRunCount++] = left;
+            }
+            if ((runCount & 1) != 0)
+                runStarts[nextRunCount++] = runStarts[runCount - 1];
+            runStarts[nextRunCount] = arr.length;
+            runCount = nextRunCount;
+        }
     }
 
-    private static int minRunLength(int size)
+    public static void timSort(int[] arr)
     {
-        int remainder = 0;
-        while (size >= MIN_MERGE)
+        if (arr.length < 2)
+            return;
+        int[] runStarts = new int[arr.length + 1];
+        int runCount = 0;
+        int minRun = minRunLength(arr.length);
+        int[] auxiliary = new int[arr.length];
+        int start = 0;
+        while (start < arr.length)
         {
-            remainder |= size & 1;
-            size >>= 1;
+            runStarts[runCount++] = start;
+            int end = findNaturalRunEndInt(arr, start);
+            if (start < end && arr[start] > arr[start + 1])
+                reverseRangeInt(arr, start, end);
+            if (end - start + 1 < minRun)
+                end = Math.min(start + minRun - 1, arr.length - 1);
+            insertionSortInt(arr, start, end);
+            start = end + 1;
         }
-        return size + remainder;
+        mergeRunsInt(arr, runStarts, runCount, auxiliary);
     }
 
-    private static final class TimSorter<T extends Comparable<T>>
+    public static void timSort(double[] arr)
     {
-        private final T[] array;
-        private final int minRun;
-        private final T[] temporary;
-        private final int[] runBase = new int[85];
-        private final int[] runLength = new int[85];
-        private int stackSize;
-
-        private TimSorter(T[] array)
+        if (arr.length < 2)
+            return;
+        int[] runStarts = new int[arr.length + 1];
+        int runCount = 0;
+        int minRun = minRunLength(arr.length);
+        double[] auxiliary = new double[arr.length];
+        int start = 0;
+        while (start < arr.length)
         {
-            this.array = array;
-            minRun = minRunLength(array.length);
-            temporary = array.clone();
+            runStarts[runCount++] = start;
+            int end = findNaturalRunEndDouble(arr, start);
+            if (start < end && Double.compare(arr[start], arr[start + 1]) > 0)
+                reverseRangeDouble(arr, start, end);
+            if (end - start + 1 < minRun)
+                end = Math.min(start + minRun - 1, arr.length - 1);
+            insertionSortDouble(arr, start, end);
+            start = end + 1;
         }
+        mergeRunsDouble(arr, runStarts, runCount, auxiliary);
+    }
 
-        private void sort()
+    private static <T extends Comparable<T>> int findNaturalRunEnd(T[] arr, int start)
+    {
+        int end = start;
+        if (end + 1 < arr.length)
         {
-            int low = 0;
-            int high = array.length;
-
-            while (low < high)
+            boolean descending = arr[end].compareTo(arr[end + 1]) > 0;
+            ++end;
+            while (end < arr.length - 1)
             {
-                int length = countRunAndMakeAscending(low, high);
-                if (length < minRun)
-                {
-                    int forcedLength = Math.min(minRun, high - low);
-                    binarySort(low, low + forcedLength, low + length);
-                    length = forcedLength;
-                }
-
-                pushRun(low, length);
-                mergeCollapse();
-                low += length;
-            }
-
-            mergeForceCollapse();
-        }
-
-        private int countRunAndMakeAscending(int low, int high)
-        {
-            int runHigh = low + 1;
-            if (runHigh == high)
-            {
-                return 1;
-            }
-
-            if (array[runHigh].compareTo(array[low]) < 0)
-            {
-                while (runHigh < high
-                        && array[runHigh].compareTo(array[runHigh - 1]) < 0)
-                {
-                    runHigh++;
-                }
-                reverseRange(low, runHigh);
-            }
-            else
-            {
-                while (runHigh < high
-                        && array[runHigh].compareTo(array[runHigh - 1]) >= 0)
-                {
-                    runHigh++;
-                }
-            }
-            return runHigh - low;
-        }
-
-        private void binarySort(int low, int high, int start)
-        {
-            if (start == low)
-            {
-                start++;
-            }
-
-            for (; start < high; start++)
-            {
-                T pivot = array[start];
-                int left = low;
-                int right = start;
-
-                while (left < right)
-                {
-                    int middle = (left + right) >>> 1;
-                    if (pivot.compareTo(array[middle]) < 0)
-                    {
-                        right = middle;
-                    }
-                    else
-                    {
-                        left = middle + 1;
-                    }
-                }
-
-                int moved = start - left;
-                if (moved == 1)
-                {
-                    array[left + 1] = array[left];
-                }
-                else if (moved > 1)
-                {
-                    System.arraycopy(array, left, array, left + 1, moved);
-                }
-                array[left] = pivot;
-            }
-        }
-
-        private void reverseRange(int low, int high)
-        {
-            high--;
-            while (low < high)
-            {
-                T value = array[low];
-                array[low++] = array[high];
-                array[high--] = value;
-            }
-        }
-
-        private void pushRun(int base, int length)
-        {
-            runBase[stackSize] = base;
-            runLength[stackSize] = length;
-            stackSize++;
-        }
-
-        private void mergeCollapse()
-        {
-            while (stackSize > 1)
-            {
-                int index = stackSize - 2;
-                if (index > 0
-                        && runLength[index - 1] <= runLength[index] + runLength[index + 1])
-                {
-                    if (runLength[index - 1] < runLength[index + 1])
-                    {
-                        index--;
-                    }
-                    mergeAt(index);
-                }
-                else if (runLength[index] <= runLength[index + 1])
-                {
-                    mergeAt(index);
-                }
-                else
-                {
+                int comparison = arr[end].compareTo(arr[end + 1]);
+                if (descending ? comparison <= 0 : comparison > 0)
                     break;
-                }
+                ++end;
             }
         }
+        return end;
+    }
 
-        private void mergeForceCollapse()
+    private static <T> void reverseRange(T[] arr, int start, int end)
+    {
+        while (start < end)
         {
-            while (stackSize > 1)
-            {
-                int index = stackSize - 2;
-                if (index > 0 && runLength[index - 1] < runLength[index + 1])
-                {
-                    index--;
-                }
-                mergeAt(index);
-            }
-        }
-
-        private void mergeAt(int index)
-        {
-            int firstBase = runBase[index];
-            int firstLength = runLength[index];
-            int secondBase = runBase[index + 1];
-            int secondLength = runLength[index + 1];
-
-            runLength[index] = firstLength + secondLength;
-            if (index == stackSize - 3)
-            {
-                runBase[index + 1] = runBase[index + 2];
-                runLength[index + 1] = runLength[index + 2];
-            }
-            stackSize--;
-
-            int skipLeft = gallopRight(array[secondBase], firstBase, firstLength, 0);
-            firstBase += skipLeft;
-            firstLength -= skipLeft;
-            if (firstLength == 0)
-            {
-                return;
-            }
-
-            secondLength = gallopLeft(
-                    array[firstBase + firstLength - 1],
-                    secondBase,
-                    secondLength,
-                    secondLength - 1);
-            if (secondLength == 0)
-            {
-                return;
-            }
-
-            if (firstLength <= secondLength)
-            {
-                mergeLow(firstBase, firstLength, secondBase, secondLength);
-            }
-            else
-            {
-                mergeHigh(firstBase, firstLength, secondBase, secondLength);
-            }
-        }
-
-        private int gallopRight(T value, int base, int length, int hint)
-        {
-            int offset = 1;
-            int lastOffset = 0;
-            if (value.compareTo(array[base + hint]) > 0)
-            {
-                int maxOffset = length - hint;
-                while (offset < maxOffset
-                        && value.compareTo(array[base + hint + offset]) > 0)
-                {
-                    lastOffset = offset;
-                    offset = (offset << 1) + 1;
-                    if (offset <= 0)
-                    {
-                        offset = maxOffset;
-                    }
-                }
-                if (offset > maxOffset)
-                {
-                    offset = maxOffset;
-                }
-                lastOffset += hint;
-                offset += hint;
-            }
-            else
-            {
-                int maxOffset = hint + 1;
-                while (offset < maxOffset
-                        && value.compareTo(array[base + hint - offset]) <= 0)
-                {
-                    lastOffset = offset;
-                    offset = (offset << 1) + 1;
-                    if (offset <= 0)
-                    {
-                        offset = maxOffset;
-                    }
-                }
-                if (offset > maxOffset)
-                {
-                    offset = maxOffset;
-                }
-                int temporary = lastOffset;
-                lastOffset = hint - offset;
-                offset = hint - temporary;
-            }
-
-            lastOffset++;
-            while (lastOffset < offset)
-            {
-                int middle = lastOffset + ((offset - lastOffset) >>> 1);
-                if (value.compareTo(array[base + middle]) > 0)
-                {
-                    lastOffset = middle + 1;
-                }
-                else
-                {
-                    offset = middle;
-                }
-            }
-            return offset;
-        }
-
-        private int gallopLeft(T value, int base, int length, int hint)
-        {
-            int lastOffset = 0;
-            int offset = 1;
-            if (value.compareTo(array[base + hint]) < 0)
-            {
-                int maxOffset = hint + 1;
-                while (offset < maxOffset
-                        && value.compareTo(array[base + hint - offset]) < 0)
-                {
-                    lastOffset = offset;
-                    offset = (offset << 1) + 1;
-                    if (offset <= 0)
-                    {
-                        offset = maxOffset;
-                    }
-                }
-                if (offset > maxOffset)
-                {
-                    offset = maxOffset;
-                }
-                int temporary = lastOffset;
-                lastOffset = hint - offset;
-                offset = hint - temporary;
-            }
-            else
-            {
-                int maxOffset = length - hint;
-                while (offset < maxOffset
-                        && value.compareTo(array[base + hint + offset]) >= 0)
-                {
-                    lastOffset = offset;
-                    offset = (offset << 1) + 1;
-                    if (offset <= 0)
-                    {
-                        offset = maxOffset;
-                    }
-                }
-                if (offset > maxOffset)
-                {
-                    offset = maxOffset;
-                }
-                lastOffset += hint;
-                offset += hint;
-            }
-
-            lastOffset++;
-            while (lastOffset < offset)
-            {
-                int middle = lastOffset + ((offset - lastOffset) >>> 1);
-                if (value.compareTo(array[base + middle]) < 0)
-                {
-                    offset = middle;
-                }
-                else
-                {
-                    lastOffset = middle + 1;
-                }
-            }
-            return offset;
-        }
-
-        private void mergeLow(int firstBase, int firstLength, int secondBase, int secondLength)
-        {
-            System.arraycopy(array, firstBase, temporary, 0, firstLength);
-            int first = 0;
-            int second = secondBase;
-            int destination = firstBase;
-
-            while (first < firstLength && second < secondBase + secondLength)
-            {
-                if (temporary[first].compareTo(array[second]) <= 0)
-                {
-                    array[destination++] = temporary[first++];
-                }
-                else
-                {
-                    array[destination++] = array[second++];
-                }
-            }
-
-            if (first < firstLength)
-            {
-                System.arraycopy(temporary, first, array, destination, firstLength - first);
-            }
-        }
-
-        private void mergeHigh(int firstBase, int firstLength, int secondBase, int secondLength)
-        {
-            System.arraycopy(array, secondBase, temporary, 0, secondLength);
-            int first = firstBase + firstLength - 1;
-            int second = secondLength - 1;
-            int destination = secondBase + secondLength - 1;
-
-            while (first >= firstBase && second >= 0)
-            {
-                if (array[first].compareTo(temporary[second]) > 0)
-                {
-                    array[destination--] = array[first--];
-                }
-                else
-                {
-                    array[destination--] = temporary[second--];
-                }
-            }
-
-            if (second >= 0)
-            {
-                System.arraycopy(temporary, 0, array, firstBase, second + 1);
-            }
+            T temp = arr[start];
+            arr[start++] = arr[end];
+            arr[end--] = temp;
         }
     }
+
+    private static int findNaturalRunEndInt(int[] arr, int start)
+    {
+        int end = start;
+        if (end + 1 < arr.length)
+        {
+            boolean descending = arr[end] > arr[end + 1];
+            ++end;
+            while (end < arr.length - 1)
+            {
+                int comparison = Integer.compare(arr[end], arr[end + 1]);
+                if (descending ? comparison <= 0 : comparison > 0)
+                    break;
+                ++end;
+            }
+        }
+        return end;
+    }
+
+    private static int findNaturalRunEndDouble(double[] arr, int start)
+    {
+        int end = start;
+        if (end + 1 < arr.length)
+        {
+            boolean descending = Double.compare(arr[end], arr[end + 1]) > 0;
+            ++end;
+            while (end < arr.length - 1)
+            {
+                int comparison = Double.compare(arr[end], arr[end + 1]);
+                if (descending ? comparison <= 0 : comparison > 0)
+                    break;
+                ++end;
+            }
+        }
+        return end;
+    }
+
+    private static void reverseRangeInt(int[] arr, int start, int end)
+    {
+        while (start < end)
+        {
+            int temp = arr[start];
+            arr[start++] = arr[end];
+            arr[end--] = temp;
+        }
+    }
+
+    private static void reverseRangeDouble(double[] arr, int start, int end)
+    {
+        while (start < end)
+        {
+            double temp = arr[start];
+            arr[start++] = arr[end];
+            arr[end--] = temp;
+        }
+    }
+
+    private static void insertionSortInt(int[] arr, int left, int right)
+    {
+        for (int i = left + 1; i <= right; ++i)
+        {
+            int item = arr[i];
+            int ix = i - 1;
+            while (ix >= left && arr[ix] > item)
+            {
+                arr[ix + 1] = arr[ix];
+                --ix;
+            }
+            arr[ix + 1] = item;
+        }
+    }
+
+    private static void insertionSortDouble(double[] arr, int left, int right)
+    {
+        for (int i = left + 1; i <= right; ++i)
+        {
+            double item = arr[i];
+            int ix = i - 1;
+            while (ix >= left && Double.compare(arr[ix], item) > 0)
+            {
+                arr[ix + 1] = arr[ix];
+                --ix;
+            }
+            arr[ix + 1] = item;
+        }
+    }
+
+    private static void mergeRunsInt(int[] arr, int[] runStarts, int runCount, int[] auxiliary)
+    {
+        runStarts[runCount] = arr.length;
+        while (runCount > 1)
+        {
+            int nextRunCount = 0;
+            for (int i = 0; i < runCount - 1; i += 2)
+            {
+                int left = runStarts[i];
+                int mid = runStarts[i + 1];
+                int right = i + 2 < runCount ? runStarts[i + 2] : arr.length;
+                mergeHalvesInt(arr, auxiliary, left, mid, right);
+                runStarts[nextRunCount++] = left;
+            }
+            if ((runCount & 1) != 0)
+                runStarts[nextRunCount++] = runStarts[runCount - 1];
+            runStarts[nextRunCount] = arr.length;
+            runCount = nextRunCount;
+        }
+    }
+
+    private static void mergeRunsDouble(double[] arr, int[] runStarts, int runCount, double[] auxiliary)
+    {
+        runStarts[runCount] = arr.length;
+        while (runCount > 1)
+        {
+            int nextRunCount = 0;
+            for (int i = 0; i < runCount - 1; i += 2)
+            {
+                int left = runStarts[i];
+                int mid = runStarts[i + 1];
+                int right = i + 2 < runCount ? runStarts[i + 2] : arr.length;
+                mergeHalvesDouble(arr, auxiliary, left, mid, right);
+                runStarts[nextRunCount++] = left;
+            }
+            if ((runCount & 1) != 0)
+                runStarts[nextRunCount++] = runStarts[runCount - 1];
+            runStarts[nextRunCount] = arr.length;
+            runCount = nextRunCount;
+        }
+    }
+
+    private static void mergeHalvesInt(int[] arr, int[] auxiliary, int left, int mid, int right)
+    {
+        if (arr[mid - 1] <= arr[mid])
+            return;
+        System.arraycopy(arr, left, auxiliary, 0, mid - left);
+        int ix = 0;
+        int leftEnd = mid - left;
+        int rightIx = mid;
+        int write = left;
+        while (ix < leftEnd && rightIx < right)
+            arr[write++] = auxiliary[ix] <= arr[rightIx] ? auxiliary[ix++] : arr[rightIx++];
+        while (ix < leftEnd)
+            arr[write++] = auxiliary[ix++];
+    }
+
+    private static void mergeHalvesDouble(double[] arr, double[] auxiliary, int left, int mid, int right)
+    {
+        if (Double.compare(arr[mid - 1], arr[mid]) <= 0)
+            return;
+        System.arraycopy(arr, left, auxiliary, 0, mid - left);
+        int ix = 0;
+        int leftEnd = mid - left;
+        int rightIx = mid;
+        int write = left;
+        while (ix < leftEnd && rightIx < right)
+        {
+            if (Double.compare(auxiliary[ix], arr[rightIx]) <= 0)
+                arr[write++] = auxiliary[ix++];
+            else
+                arr[write++] = arr[rightIx++];
+        }
+        while (ix < leftEnd)
+            arr[write++] = auxiliary[ix++];
+    }
+
+    private static int minRunLength(int n)
+    {
+        int r = 0;
+        while (n >= MIN_MERGE)
+        {
+            r |= n & 1;
+            n >>= 1;
+        }
+        return n + r;
+    }
+
 }

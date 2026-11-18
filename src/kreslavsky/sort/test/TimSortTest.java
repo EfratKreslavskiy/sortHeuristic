@@ -51,4 +51,16 @@ public class TimSortTest {
             assertArrayEquals(testArrays[i], sorted);
         }
     }
+
+    @Test
+    void timSort_PrimitiveArrays()
+    {
+        int[] ints = {5, 4, 3, 2, 1, 1, 6};
+        TimSort.timSort(ints);
+        assertArrayEquals(new int[] {1, 1, 2, 3, 4, 5, 6}, ints);
+
+        double[] doubles = {0.5, -1.0, 0.0, 0.5, -0.5};
+        TimSort.timSort(doubles);
+        assertArrayEquals(new double[] {-1.0, -0.5, 0.0, 0.5, 0.5}, doubles);
+    }
 }
