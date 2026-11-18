@@ -43,7 +43,6 @@ public class TestingBenchmark {
     };
     private static final int MEASUREMENTS = 20;
     private static final int WARMUP_RUNS = 20;
-    private static final long MAX_BUCKET_RANGE = 10_000_000L;
     private static final Path OUTPUT = Paths.get("results", "results.csv");
 
     public static void main(String[] args) throws IOException {
@@ -89,12 +88,12 @@ public class TestingBenchmark {
             warmUp(data, sorts);
         }
         Object builtInReference = cloneArray(data);
-        java.util.Arrays.sort((Comparable[]) builtInReference);
+        sortWithBuiltIn(builtInReference);
         System.gc();
         for (int runNumber = 1; runNumber <= MEASUREMENTS; runNumber++) {
             long builtInRuntime;
             builtInRuntime = timedMeasurement(data, array ->
-                    java.util.Arrays.sort((Comparable[]) array)).runtime;
+                    sortWithBuiltIn(array)).runtime;
 
             writeRow(
                     writer,
@@ -123,7 +122,7 @@ public class TestingBenchmark {
 
                 String sortName = sort.name;
                 if ("BucketSort".equals(sort.name)
-                        && bucketUsesArraysSort((Integer[]) data)) {
+                        && bucketUsesArraysSort(data)) {
                     sortName = "BucketSort (Arrays.sort fallback)";
                 }
                 writeRow(
@@ -141,7 +140,14 @@ public class TestingBenchmark {
         }
     }
 
-    private static boolean bucketUsesArraysSort(Integer[] array) {
+    private static boolean bucketUsesArraysSort(Object data) {
+        if (data instanceof int[]) {
+            return bucketUsesArraysSort((int[]) data);
+        }
+        return bucketUsesArraysSort((Integer[]) data);
+    }
+
+    private static boolean bucketUsesArraysSort(int[] array) {
         int min = array[0];
         int max = array[0];
         for (int i = 1; i < array.length; i++) {
@@ -150,8 +156,26 @@ public class TestingBenchmark {
         }
         long range = (long) max - min + 1;
         return range > Integer.MAX_VALUE
-                || range > MAX_BUCKET_RANGE
-                || range > Math.max(1024L, (long) array.length * 64L);
+                || range > (long) array.length * 8L
+                || range * Integer.BYTES > 16L * 1024L * 1024L;
+    }
+
+    private static boolean bucketUsesArraysSort(Integer[] array) {
+        int[] primitive = new int[array.length];
+        for (int i = 0; i < array.length; i++) {
+            primitive[i] = array[i];
+        }
+        return bucketUsesArraysSort(primitive);
+    }
+
+    private static void sortWithBuiltIn(Object array) {
+        if (array instanceof int[]) {
+            Arrays.sort((int[]) array);
+        } else if (array instanceof double[]) {
+            Arrays.sort((double[]) array);
+        } else {
+            Arrays.sort((Comparable[]) array);
+        }
     }
 
     private static void warmUp(Object data, List<SortSpec> sorts) {
@@ -237,6 +261,20 @@ public class TestingBenchmark {
             String sign) {
         Random random = new Random(42L);
         int[] values = generateValues(size, order, duplicates, sign, random);
+        if ("Integer (primitive)".equals(type)) {
+            int[] result = new int[size];
+            for (int i = 0; i < size; i++) {
+                result[i] = values[i];
+            }
+            return result;
+        }
+        if ("Double (primitive)".equals(type)) {
+            double[] result = new double[size];
+            for (int i = 0; i < size; i++) {
+                result[i] = (double) values[i];
+            }
+            return result;
+        }
         if ("Integer".equals(type)) {
             Integer[] result = new Integer[size];
             for (int i = 0; i < size; i++) {
@@ -346,6 +384,12 @@ public class TestingBenchmark {
     }
 
     private static boolean isSortedLike(Object actual, Object expected) {
+        if (actual instanceof int[]) {
+            return Arrays.equals((int[]) actual, (int[]) expected);
+        }
+        if (actual instanceof double[]) {
+            return Arrays.equals((double[]) actual, (double[]) expected);
+        }
         if (actual instanceof Integer[]) {
             return Arrays.equals((Integer[]) actual, (Integer[]) expected);
         }
@@ -359,6 +403,12 @@ public class TestingBenchmark {
     }
 
     private static Object cloneArray(Object array) {
+        if (array instanceof int[]) {
+            return ((int[]) array).clone();
+        }
+        if (array instanceof double[]) {
+            return ((double[]) array).clone();
+        }
         if (array instanceof Integer[]) {
             return ((Integer[]) array).clone();
         }
@@ -372,6 +422,12 @@ public class TestingBenchmark {
     }
 
     private static int sourceLength(Object array) {
+        if (array instanceof int[]) {
+            return ((int[]) array).length;
+        }
+        if (array instanceof double[]) {
+            return ((double[]) array).length;
+        }
         if (array instanceof Integer[]) {
             return ((Integer[]) array).length;
         }
@@ -385,6 +441,18 @@ public class TestingBenchmark {
     }
 
     private static Object resizeForWarmup(Object array) {
+        if (array instanceof int[]) {
+            int[] source = (int[]) array;
+            int[] warmup = new int[1000];
+            fillRepeated(warmup, source);
+            return warmup;
+        }
+        if (array instanceof double[]) {
+            double[] source = (double[]) array;
+            double[] warmup = new double[1000];
+            fillRepeated(warmup, source);
+            return warmup;
+        }
         if (array instanceof Integer[]) {
             Integer[] source = (Integer[]) array;
             Integer[] warmup = new Integer[1000];
@@ -415,8 +483,35 @@ public class TestingBenchmark {
         }
     }
 
+    private static void fillRepeated(int[] target, int[] source) {
+        for (int i = 0; i < target.length; i++) {
+            target[i] = source[i % source.length];
+        }
+    }
+
+    private static void fillRepeated(double[] target, double[] source) {
+        for (int i = 0; i < target.length; i++) {
+            target[i] = source[i % source.length];
+        }
+    }
+
     private static List<SortSpec> applicableSorts(String type) {
         List<SortSpec> sorts = new ArrayList<SortSpec>();
+        if ("Integer (primitive)".equals(type)) {
+            sorts.add(new SortSpec("MergeSort", array -> MergeSort.mergeSort((int[]) array)));
+            sorts.add(new SortSpec("QuickSort", array -> QuickSort.quickSort((int[]) array)));
+            sorts.add(new SortSpec("TimSort", array -> TimSort.timSort((int[]) array)));
+            sorts.add(new SortSpec("BucketSort", array -> BucketSort.bucketSort((int[]) array)));
+            sorts.add(new SortSpec("RadixSort", array -> RadixSort.radixSort((int[]) array)));
+            return sorts;
+        }
+        if ("Double (primitive)".equals(type)) {
+            sorts.add(new SortSpec("MergeSort", array -> MergeSort.mergeSort((double[]) array)));
+            sorts.add(new SortSpec("QuickSort", array -> QuickSort.quickSort((double[]) array)));
+            sorts.add(new SortSpec("TimSort", array -> TimSort.timSort((double[]) array)));
+            sorts.add(new SortSpec("RadixSort", array -> RadixSort.radixSort((double[]) array)));
+            return sorts;
+        }
         sorts.add(new SortSpec("InsertionSort", array -> InsertionSort.insertionSort((Comparable[]) array)));
         sorts.add(new SortSpec("MergeSort", array -> MergeSort.mergeSort((Comparable[]) array, 0, ((Comparable[]) array).length)));
         sorts.add(new SortSpec("QuickSort", array -> QuickSort.quickSort((Comparable[]) array, 0, ((Comparable[]) array).length)));
@@ -439,7 +534,14 @@ public class TestingBenchmark {
     }
 
     private static String[] typeNames() {
-        return new String[]{"Integer", "Double", "String", "abstract object with some ordering properties"};
+        return new String[]{
+                "Integer",
+                "Integer (primitive)",
+                "Double",
+                "Double (primitive)",
+                "String",
+                "abstract object with some ordering properties"
+        };
     }
 
     private static String[] signsFor(String type, String duplicates) {
